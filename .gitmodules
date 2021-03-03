@@ -1,0 +1,3 @@
+[submodule "XlibWrapper/libs/doctest"]
+	path = XlibWrapper/libs/doctest
+	url = https://github.com/onqtam/doctest.git
