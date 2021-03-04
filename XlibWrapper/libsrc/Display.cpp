@@ -3,6 +3,75 @@
 #include <type_traits>
 #include <exception>
 
+constexpr unsigned long KeyPressType = KeyPress ; 
+constexpr unsigned long KeyReleaseType = KeyRelease ; 
+constexpr unsigned long ButtonPressType = ButtonPress ; 
+constexpr unsigned long ButtonReleaseType = ButtonRelease ; 
+constexpr unsigned long MotionNotifyType = MotionNotify ; 
+constexpr unsigned long EnterNotifyType = EnterNotify ; 
+constexpr unsigned long LeaveNotifyType = LeaveNotify ; 
+constexpr unsigned long FocusInType = FocusIn ; 
+constexpr unsigned long FocusOutType = FocusOut ; 
+constexpr unsigned long KeymapNotifyType = KeymapNotify ; 
+constexpr unsigned long ExposeType = Expose ; 
+constexpr unsigned long GraphicsExposeType = GraphicsExpose ; 
+constexpr unsigned long NoExposeType = NoExpose ; 
+constexpr unsigned long CirculateRequestType = CirculateRequest ; 
+constexpr unsigned long ConfigureRequestType = ConfigureRequest ; 
+constexpr unsigned long MapRequestType = MapRequest ; 
+constexpr unsigned long ResizeRequestType = ResizeRequest ; 
+constexpr unsigned long CirculateNotifyType = CirculateNotify ; 
+constexpr unsigned long ConfigureNotifyType = ConfigureNotify ; 
+constexpr unsigned long CreateNotifyType = CreateNotify ; 
+constexpr unsigned long DestroyNotifyType = DestroyNotify ; 
+constexpr unsigned long GravityNotifyType = GravityNotify ; 
+constexpr unsigned long MapNotifyType = MapNotify ; 
+constexpr unsigned long MappingNotifyType = MappingNotify ; 
+constexpr unsigned long ReparentNotifyType = ReparentNotify ; 
+constexpr unsigned long UnmapNotifyType = UnmapNotify ; 
+constexpr unsigned long VisibilityNotifyType = VisibilityNotify ; 
+constexpr unsigned long ColormapNotifyType = ColormapNotify ; 
+constexpr unsigned long ClientMessageType = ClientMessage ; 
+constexpr unsigned long PropertyNotifyType = PropertyNotify ; 
+constexpr unsigned long SelectionClearType = SelectionClear ; 
+constexpr unsigned long SelectionNotifyType = SelectionNotify ; 
+constexpr unsigned long SelectionRequestType = SelectionRequest ; 
+
+#undef KeyPress 
+#undef KeyRelease 
+#undef ButtonPress 
+#undef ButtonRelease 
+#undef MotionNotify 
+#undef EnterNotify 
+#undef LeaveNotify 
+#undef FocusIn 
+#undef FocusOut 
+#undef KeymapNotify 
+#undef Expose 
+#undef GraphicsExpose 
+#undef NoExpose 
+#undef CirculateRequest 
+#undef ConfigureRequest 
+#undef MapRequest 
+#undef ResizeRequest 
+#undef CirculateNotify 
+#undef ConfigureNotify 
+#undef CreateNotify 
+#undef DestroyNotify 
+#undef GravityNotify 
+#undef MapNotify 
+#undef MappingNotify 
+#undef ReparentNotify 
+#undef UnmapNotify 
+#undef VisibilityNotify 
+#undef ColormapNotify 
+#undef ClientMessage 
+#undef PropertyNotify 
+#undef SelectionClear 
+#undef SelectionNotify 
+#undef SelectionRequest 
+
+
 namespace x11{
   struct NativeConverter{
     static constexpr int convert(x11::GCFunctionValue fun){
@@ -216,9 +285,9 @@ namespace x11 {
 //Event
 namespace x11 {
   EventType event_type_from_native_type( int type){
-#define CASE(TYPE)				\
-    case TYPE:					\
-      return EventType::TYPE ## Type;		\
+#define CASE(TYPE)					\
+    case TYPE## Type:					\
+      return EventType::TYPE ;				\
       break;
     
     switch (type){
@@ -255,9 +324,53 @@ namespace x11 {
 	CASE(SelectionClear)
 	CASE(SelectionNotify)
 	CASE(SelectionRequest)
-    default:
-      return EventType::UnknownType;
+    default: // this should never happen
+      return EventType::Unknown;
     };
+#undef CASE
+  };
+  std::string string_from_event_type(EventType type){
+#define CASE(NAME) \
+    case EventType::NAME :		\
+      return #NAME ; \
+      break;
+    switch(type){
+      CASE(KeyPress)
+	CASE(KeyRelease)
+	CASE(ButtonPress)
+	CASE(ButtonRelease)
+	CASE(MotionNotify)
+	CASE(EnterNotify)
+	CASE(LeaveNotify)
+	CASE(FocusIn)
+	CASE(FocusOut)
+	CASE(KeymapNotify)
+	CASE(Expose)
+	CASE(GraphicsExpose)
+	CASE(NoExpose)
+	CASE(CirculateRequest)
+	CASE(ConfigureRequest)
+	CASE(MapRequest)
+	CASE(ResizeRequest)
+	CASE(CirculateNotify)
+	CASE(ConfigureNotify)
+	CASE(CreateNotify)
+	CASE(DestroyNotify)
+	CASE(GravityNotify)
+	CASE(MapNotify)
+	CASE(MappingNotify)
+	CASE(ReparentNotify)
+	CASE(UnmapNotify)
+	CASE(VisibilityNotify)
+	CASE(ColormapNotify)
+	CASE(ClientMessage)
+	CASE(PropertyNotify)
+	CASE(SelectionClear)
+	CASE(SelectionNotify)
+	CASE(SelectionRequest)
+	CASE(Unknown)
+	
+	}
 #undef CASE
   };
 
@@ -290,7 +403,7 @@ namespace x11 {
     
     return x11::GC( static_cast<void*>(gc));
   };
-  void Display::select_input(DrawableId win) { XSelectInput(this->impl,win , ExposureMask|StructureNotifyMask); };
+  void Display::select_input(DrawableId win,  unsigned long mask) { XSelectInput(this->impl,win ,  mask); };
   void Display::draw_point(DrawableId drawable, GC gc, int x, int y){XDrawPoint(this->impl, drawable, NativeConverter::convert(gc), x,y);}
   void Display::draw_rectangle(DrawableId drawable, GC gc, int x, int y,unsigned int width, unsigned int height){XDrawRectangle(this->impl, drawable, NativeConverter::convert(gc), x,y, width, height);}
   void Display::fill_rectangle(DrawableId drawable, GC gc, int x, int y,unsigned int width, unsigned int height){XFillRectangle(this->impl, drawable, NativeConverter::convert(gc), x,y, width, height);}

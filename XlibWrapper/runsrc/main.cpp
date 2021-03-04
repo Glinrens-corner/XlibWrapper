@@ -24,25 +24,23 @@ int main(){
 					       dpl.white_pixel(dpl.default_screen()));
   GC gc = dpl.create_gc(win, val);
   Event event{};
-  dpl.select_input(win, ); 
+  dpl.select_input(win, EventMask::Exposure|EventMask::StructureNotify); 
   dpl.map_window(win);
   dpl.sync(false);
 		   
   while ( 1){
     dpl.next_event(event);
+    std::cout << string_from_event_type(event.type()) << std::endl;
     switch(event.type()){
-    case EventType::ExposeType:
-      dpl.draw_rectangle(win,gc,50,50,100,100 );
+    case EventType::Expose:
       dpl.fill_rectangle(win,gc,50,50,100,100 );
+      dpl.draw_rectangle(win,gc,30,30,140,140 );
       dpl.draw_point( win,gc, -1,-5 );
-      break;
-    default:
       break;
     };
 
   }
  
-  dpl.sync(false);
   std::cout << dpl.screen_count() <<" " << dpl.default_screen()<< std::endl;
   sleep(10);
   return 0;
