@@ -403,6 +403,9 @@ namespace x11 {
     
     return x11::GC( static_cast<void*>(gc));
   };
+  AtomId Display::intern_atom(const std::string& atom_name, bool only_if_exists ){return XInternAtom(this->impl, atom_name.c_str(), only_if_exists);}
+  Status Display::set_wm_protocols(DrawableId win, const std::vector<AtomId>& protocols  ){return XSetWMProtocols( this->impl, win, const_cast<AtomId*>(protocols.data()), protocols.size()); };
+  void Display::destroy_window(DrawableId win) {XDestroyWindow(this->impl, win);};
   void Display::select_input(DrawableId win,  unsigned long mask) { XSelectInput(this->impl,win ,  mask); };
   void Display::draw_point(DrawableId drawable, GC gc, int x, int y){XDrawPoint(this->impl, drawable, NativeConverter::convert(gc), x,y);}
   void Display::draw_rectangle(DrawableId drawable, GC gc, int x, int y,unsigned int width, unsigned int height){XDrawRectangle(this->impl, drawable, NativeConverter::convert(gc), x,y, width, height);}

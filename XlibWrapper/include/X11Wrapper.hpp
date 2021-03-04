@@ -1,11 +1,17 @@
 #ifndef X11WRAPPER_HPP
 #define X11WRAPPER_HPP
 #include <memory>
+#include <vector>
 struct _XGC;
 struct _XDisplay;
+
 namespace x11 {
-  using DrawableId = unsigned long;
   struct NativeConverter;
+
+  using DrawableId = unsigned long;
+  using AtomId = unsigned long;
+  using Status = int;
+  
   
   // setting it to some type for now...
   using Pixmap = unsigned long;
@@ -214,6 +220,10 @@ namespace x11 {
     void draw_point(DrawableId drawable, GC gc, int x, int y); 
     void draw_rectangle(DrawableId drawable, GC gc, int x, int y, unsigned int width, unsigned int height);
     void fill_rectangle(DrawableId drawable, GC gc, int x, int y,unsigned int width, unsigned int height);
+    AtomId intern_atom(const std::string& atom_name, bool only_if_exists  );
+    
+    Status set_wm_protocols(DrawableId win, const std::vector<AtomId>& protocols  );
+    void destroy_window(DrawableId win);
     void next_event(Event & event );
     void map_window(DrawableId);
     void select_input(DrawableId win, unsigned long mask);

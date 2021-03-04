@@ -26,9 +26,14 @@ int main(){
   Event event{};
   dpl.select_input(win, EventMask::Exposure|EventMask::StructureNotify); 
   dpl.map_window(win);
+  std::vector<AtomId>wm_protocols{dpl.intern_atom( "WM_DELETE_WINDOW", false)};
+  if(! dpl.set_wm_protocols(win,wm_protocols)){
+
+    throw std::exception();
+  };
   dpl.sync(false);
-		   
-  while ( 1){
+  bool end=false;
+  while ( not end){
     dpl.next_event(event);
     std::cout << string_from_event_type(event.type()) << std::endl;
     switch(event.type()){
@@ -37,11 +42,14 @@ int main(){
       dpl.draw_rectangle(win,gc,30,30,140,140 );
       dpl.draw_point( win,gc, -1,-5 );
       break;
+    case EventType::ClientMessage:
+      dpl.destroy_window(win);
+      end = true;
+      break;
     };
 
   }
  
   std::cout << dpl.screen_count() <<" " << dpl.default_screen()<< std::endl;
-  sleep(10);
   return 0;
 }
