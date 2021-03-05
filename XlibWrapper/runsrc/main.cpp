@@ -10,22 +10,26 @@ int main(){
   using namespace x11;
   auto dpl = Display(nullptr);
   GCValues val =GCValues{}
-     .with_foreground(dpl.black_pixel(dpl.default_screen()))
-     .with_background(dpl.black_pixel(dpl.default_screen()))
+     .with_foreground(dpl.white_pixel(dpl.default_screen()))
+     .with_background(dpl.white_pixel(dpl.default_screen()))
      .with_fill_style(FillStyle::Solid)
      .with_line_width(10)
      .with_cap_style(CapStyle::Round)
      .with_join_style(JoinStyle::Round);
-     
-  DrawableId win = dpl.create_simple_window(dpl.root_window(dpl.default_screen()),
-					       0,0,
-					       300,400,
-					       0,dpl.white_pixel(dpl.default_screen()),
-					       dpl.white_pixel(dpl.default_screen()));
+
+  auto visual_info = dpl.match_visual_info(dpl.default_screen() , 24, ColorClass::TrueColor);
+
+  // DrawableId win = dpl.create_window(
+  DrawableId win = dpl.create_window(dpl.root_window(dpl.default_screen()),
+				     0,0,
+				     300,400,0,
+				     visual_info.depth(),
+				     ColorClass::TrueColor,
+				     visual_info.visual(),
+				     SetWindowAttributes{}.with_background_pixel(0) );
   GC gc = dpl.create_gc(win, val);
   Event event{};
   dpl.select_input(win, EventMask::Exposure|EventMask::StructureNotify);
-  auto visual_info = dpl.match_visual_info(dpl.default_screen() , 24, ColorClass::TrueColor);
   dpl.map_window(win);
   std::vector<AtomId>wm_protocols{dpl.intern_atom( "WM_DELETE_WINDOW", false)};
   if(! dpl.set_wm_protocols(win,wm_protocols)){

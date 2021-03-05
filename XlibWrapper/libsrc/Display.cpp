@@ -263,6 +263,31 @@ namespace x11{
     static constexpr ::XVisualInfo* access( x11::VisualInfo& info){
       return static_cast<::XVisualInfo *>(info.impl_);
     };
+    static constexpr ::Visual* access( x11::Visual& visual){
+      return static_cast<::Visual*>(visual.impl_ );
+    };
+    static constexpr ::XSetWindowAttributes convert(const x11::SetWindowAttributes& attributes ){
+#define TRANSFER(NAME) .NAME = attributes.NAME ## _
+#define TRANSFERC(NAME) .NAME = NativeConverter::convert(attributes.NAME ## _)
+      
+      return ::XSetWindowAttributes{
+	TRANSFER( background_pixmap),
+	  TRANSFER( background_pixel),
+	  TRANSFER( border_pixmap),
+	  TRANSFER( border_pixel),
+	  TRANSFER( bit_gravity),
+	  TRANSFER( win_gravity),
+	  TRANSFER( backing_store),
+	  TRANSFER( backing_planes),
+	  TRANSFER( backing_pixel),
+	  TRANSFER( save_under),
+	  TRANSFER( event_mask),
+	  TRANSFER( do_not_propagate_mask),
+	  TRANSFER( override_redirect),
+	  TRANSFER( colormap),
+	  TRANSFER( cursor)
+	  };
+    };
   };
   
 }
@@ -324,6 +349,8 @@ namespace x11 {
 namespace x11 {
   VisualInfo::VisualInfo(){this->impl_=static_cast<void*>( new ::XVisualInfo{}); };
   VisualInfo::~VisualInfo(){delete static_cast<::XVisualInfo*>( this->impl_ ) ;};
+  unsigned int VisualInfo::depth(){return NativeConverter::access(*this)->depth;};
+  Visual VisualInfo::visual(){return Visual( reinterpret_cast<void*>(NativeConverter::access(*this)->visual));};
   int VisualInfo::screen(){return NativeConverter::access(*this)->screen;};
   int VisualInfo::color_class()  { return ::get_color_map_class(NativeConverter::access(*this)); }
   unsigned long VisualInfo::red_mask(){return NativeConverter::access(*this)->red_mask;};
@@ -334,10 +361,38 @@ namespace x11 {
   int VisualInfo::bits_per_rgb(){return NativeConverter::access(*this)->bits_per_rgb;};
 };
 
+// Visual
 namespace x11 {
-  
-   Visual::Visual():impl_(nullptr){};
+   Visual::Visual(void * impl):impl_(impl){};
 }
+
+// SetWindowAttributes
+namespace x11  {
+#define IMPL(TYPE, NAME,  MASK)					       \
+  SetWindowAttributes& SetWindowAttributes::with_ ## NAME(TYPE  NAME){ \
+    this->valuemask_ |= MASK;					       \
+    this->NAME ##_ = NAME;					       \
+    return *this ;						       \
+  }     
+IMPL(Pixmap, background_pixmap, CWBackPixmap)
+IMPL(unsigned long, background_pixel, CWBackPixel)
+IMPL(Pixmap, border_pixmap, CWBorderPixmap)
+IMPL(unsigned long, border_pixel, CWBorderPixel)
+IMPL(int, bit_gravity, CWBitGravity)
+IMPL(int, win_gravity, CWWinGravity)
+IMPL(int, backing_store, CWBackingStore)
+IMPL(unsigned long, backing_planes, CWBackingPlanes)
+IMPL(unsigned long, backing_pixel, CWBackingPixel)
+IMPL(bool, save_under, CWSaveUnder)
+IMPL(long, event_mask, CWEventMask)
+IMPL(long, do_not_propagate_mask, CWDontPropagate)
+IMPL(bool, override_redirect, CWOverrideRedirect)
+IMPL(Colormap, colormap, CWColormap)
+IMPL(Cursor, cursor, CWCursor)
+
+#undef IMPL
+};
+
 //Event
 namespace x11 {
   EventType event_type_from_native_type( int type){
@@ -446,6 +501,26 @@ namespace x11 {
       return info;
   };
   DrawableId Display::root_window( int screen_num) {return  RootWindow( this->impl, screen_num); };
+  DrawableId Display::create_window(DrawableId parent,
+				    int x, int y,
+				    unsigned int width,
+				    unsigned int height,
+				    unsigned int border_width,
+				    int depth,
+				    ColorClass color_class,
+				    Visual visual,
+				    const SetWindowAttributes& attributes){
+    auto attrib = NativeConverter::convert(attributes);
+    return XCreateWindow(this->impl, parent,
+			 x,y,
+			 width, height,
+			 border_width,
+			 depth ,
+			 InputOutput,
+			 NativeConverter::access(visual),
+			 attributes.valuemask(),
+			 &attrib);
+  };
   DrawableId Display::create_simple_window(DrawableId parent,
 					 int win_x, int win_y,
 					 unsigned int width, unsigned int height,
@@ -456,10 +531,7 @@ namespace x11 {
   x11::GC Display::create_gc(DrawableId win , const GCValues& values){
     auto native_values = NativeConverter::convert(values);
     ::GC gc = XCreateGC(this->impl, win, values.valuemask(), &native_values );
-    // and this my dear friends is what happens when you either return a pointer or a (negative) errorcode
-    // also known as untagged union...
-    static_assert( sizeof(std::intptr_t) == sizeof(gc), "size missmatch");
-    if (reinterpret_cast<std::intptr_t>(gc)<0){
+    if (!gc){
       throw std::exception( );
     };
     

@@ -16,6 +16,8 @@ namespace x11 {
   using DrawableId = unsigned long;
   using AtomId = unsigned long;
   using Status = int;
+  using Colormap = unsigned long;
+  using Cursor =unsigned long;
   
   
   // setting it to some type for now...
@@ -143,13 +145,24 @@ namespace x11 {
     OwnerGrabButton=(1L<<24), 
     
   };
-  
+
   std::string string_from_event_type( EventType type);
+
+  class Visual {
+    friend NativeConverter;
+  public:
+    Visual( void * );
+  private:
+    void* impl_;
+  };
+
+  
   class VisualInfo{
     friend NativeConverter;
   public:
     VisualInfo();
     ~VisualInfo();
+    Visual visual();
     int screen();
     unsigned int depth();
     int color_class();
@@ -162,6 +175,7 @@ namespace x11 {
     
   private:
     void * impl_;
+
   };
   /*	
   class Image {
@@ -173,6 +187,48 @@ namespace x11 {
     void * impl_; 
   };
 										*/
+  class SetWindowAttributes{
+    friend NativeConverter;
+  public:
+#define IMPL(TYPE, NAME,  MASK)				\
+    SetWindowAttributes& with_ ## NAME(TYPE  NAME);
+    
+    IMPL(Pixmap, background_pixmap, CWBackPixmap)
+    IMPL(unsigned long, background_pixel, CWBackPixel)
+    IMPL(Pixmap, border_pixmap, CWBorderPixmap)
+    IMPL(unsigned long, border_pixel, CWBorderPixel)
+    IMPL(int, bit_gravity, CWBitGravity)
+    IMPL(int, win_gravity, CWWinGravity)
+    IMPL(int, backing_store, CWBackingStore)
+    IMPL(unsigned long, backing_planes, CWBackingPlanes)
+    IMPL(unsigned long, backing_pixel, CWBackingPixel)
+    IMPL(bool, save_under, CWSaveUnder)
+    IMPL(long, event_mask, CWEventMask)
+    IMPL(long, do_not_propagate_mask, CWDontPropagate)
+    IMPL(bool, override_redirect, CWOverrideRedirect)
+    IMPL(Colormap, colormap, CWColormap)
+    IMPL(Cursor, cursor, CWCursor)
+#undef IMPL
+    unsigned long valuemask()const{return this->valuemask_;};
+  private:
+    unsigned long valuemask_; 
+    Pixmap background_pixmap_;
+    unsigned long background_pixel_;
+    Pixmap border_pixmap_;
+    unsigned long border_pixel_;
+    int bit_gravity_;
+    int win_gravity_;
+    int backing_store_;
+    unsigned long backing_planes_;
+    unsigned long backing_pixel_;
+    bool save_under_;
+    long event_mask_;
+    long do_not_propagate_mask_;
+    bool override_redirect_;
+    Colormap colormap_;
+    Cursor cursor_;
+  };
+
   class GCValues{
     friend NativeConverter;
     
@@ -238,13 +294,6 @@ namespace x11 {
     void * impl_;
   };
   
-  class Visual {
-    friend NativeConverter;
-  public:
-    Visual();
-  private:
-        void* impl_;
-  };
   
   
   class Display {
@@ -258,6 +307,15 @@ namespace x11 {
 				  unsigned int border_width,
 				    unsigned long border,
 				    unsigned long background);
+    DrawableId create_window(DrawableId parent,
+				    int x, int y,
+				    unsigned int width,
+				    unsigned int height,
+				    unsigned int border_width,
+				    int depth,
+				    ColorClass color_class,
+				    Visual visual,
+				    const SetWindowAttributes& attributes);
     GC create_gc(DrawableId draw,const GCValues& values);
     void draw_point(DrawableId drawable, GC gc, int x, int y); 
     void draw_rectangle(DrawableId drawable, GC gc, int x, int y, unsigned int width, unsigned int height);
