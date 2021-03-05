@@ -3,9 +3,15 @@
 #include <iostream>
 #include <unistd.h>
 #include <memory>
+#include <ft2build.h>
+#include FT_FREETYPE_H
 
 constexpr int width = 300;
 constexpr int height = 400;
+
+FT_Library library;
+
+
 
 x11::Image create_image(x11::Display&dpl,
 			x11::VisualInfo& visual_info
@@ -32,7 +38,43 @@ int main(){
      .with_line_width(10)
      .with_cap_style(CapStyle::Round)
      .with_join_style(JoinStyle::Round);
+  
+  if(FT_Init_FreeType(&library)){
+    return 1;
+  }
+  FT_Face face;
+  if ( FT_New_Face(library,
+		   "/usr/share/fonts/truetype/NotoSans-Thin.ttf",
+		   0,
+		   &face)){
 
+    return 1;
+  }
+  std::cout << face->num_glyphs << std::endl;
+
+  int dpi_vertical = static_cast<double>(dpl.display_height(dpl.default_screen()))*25.4/dpl.display_height_mm(dpl.default_screen());
+  int dpi_horizontal = static_cast<double>(dpl.display_height(dpl.default_screen()))*25.4/dpl.display_height_mm(dpl.default_screen());
+
+  std::cout << dpi_vertical << " "<< dpi_horizontal << std::endl;
+  if(FT_Set_Char_Size(
+		      face,
+		      0,
+		      52*64,
+		      dpi_horizontal,
+		      dpi_vertical)){
+    return 2;
+  };
+  auto glyph_index = FT_Get_Char_Index(face, 'A');
+  if(! glyph_index){
+    return 3;
+  };
+  if( FT_Load_Glyph(face, glyph_index, FT_LOAD_DEFAULT)){
+    return 4;
+  };
+  if(FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL)){
+    return 5;
+  };
+  auto a_glyph = face->glyph->bitmap;
   auto visual_info = dpl.match_visual_info(dpl.default_screen() , 24, ColorClass::TrueColor);
   auto image = create_image(dpl,visual_info);
   std::cout <<"width: " << image.width() << " height: "<< image.height() << " is null " << not static_cast<bool>(image.data() ) << std::endl;;
@@ -41,10 +83,21 @@ int main(){
       char * pixel_ptr = image.data() + image.bytes_per_pixel()*x+image.width()*y*image.bytes_per_pixel();
       
       if ((y%100 < 50 )and (x%100 <50)  ) {
-	pixel_ptr[0] = 0x00;
-	pixel_ptr[1] = 0xf0;
-	pixel_ptr[2] = 0x00;
-	pixel_ptr[3] = 0xFF;
+        auto y_rel = y%100;
+	auto x_rel = x%100;
+	if ( y_rel< a_glyph.rows and x_rel < a_glyph.width ){
+	  unsigned char  glyph_pixel = *(a_glyph.buffer+ a_glyph.pitch *y_rel + x_rel);
+	  pixel_ptr[0] = 0xff-glyph_pixel;
+	  pixel_ptr[1] = glyph_pixel;
+	  pixel_ptr[2] = 0x00;
+	  pixel_ptr[3] = 0x00;
+	  
+	}else {
+	  pixel_ptr[0] = 0x00;
+	  pixel_ptr[1] = 0xf0;
+	  pixel_ptr[2] = 0x00;
+	  pixel_ptr[3] = 0x00;
+	};
       } else {
 	pixel_ptr[0] = 0xff;
 	pixel_ptr[1] = 0xff;

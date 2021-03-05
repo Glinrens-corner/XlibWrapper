@@ -311,6 +311,10 @@ namespace x11 {
   public:
     Display(char* display_name);
     ~Display();
+    int display_height( int screen_num);
+    int display_height_mm( int screen_num);
+    int display_width( int screen_num);
+    int display_width_mm( int screen_num);
     Image create_image(Visual visual,
 			      unsigned int depth,
 			      ImageFormat format,

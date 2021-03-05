@@ -12,13 +12,13 @@ project "XlibWrapper"
     toolset "clang"
     language "C++"
     cppdialect "C++17"
-    links { "X11" }
+    links { "X11" , "freetype" }
     files { "libsrc/*.cpp" , "libsrc/*.c"  }
 --    filter {"files:**.c"}
   --      compileas "C"
     filter {}
-    includedirs {"include",  "libsrc/include"}
-    buildoptions { "-Wall", }
+    includedirs {"include",  "libsrc/include" }
+    buildoptions { "-Wall", "-isystem /usr/include/freetype2"}
     filename "XlibWrapper"
 
 project "XlibRunner"
@@ -29,6 +29,7 @@ project "XlibRunner"
     cppdialect "C++17"
     filename "windows"
     targetdir "bin/runner"
-    includedirs {"include"}
-    links { "XlibWrapper","X11"}
+    includedirs {"include" , "/usr/include/freetype2" }
+    links { "XlibWrapper","X11", "freetype"}
+    buildoptions { "-Wall" } 
     files { "runsrc/*.cpp"}

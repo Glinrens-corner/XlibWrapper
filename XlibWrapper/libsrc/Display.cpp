@@ -579,6 +579,21 @@ namespace x11 {
 			 attributes.valuemask(),
 			 &attrib);
   };
+  int Display::display_height(int screen_number){
+    return XDisplayHeight(this->impl, screen_number);
+  };
+  int Display::display_height_mm(int screen_number){
+    return XDisplayHeightMM(this->impl, screen_number);
+
+  };
+  int Display::display_width(int screen_number){
+    return XDisplayWidth(this->impl, screen_number);
+
+  };
+  int Display::display_width_mm(int screen_number){
+    return XDisplayWidthMM(this->impl, screen_number);
+  };
+
   void Display::put_image(DrawableId window,
 			  GC gc,
 			  Image image,
