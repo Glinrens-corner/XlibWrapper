@@ -4,6 +4,8 @@
 #include <vector>
 struct _XGC;
 struct _XDisplay;
+
+
 namespace x11 {
   unsigned long all_planes();
 
@@ -19,7 +21,8 @@ namespace x11 {
   // setting it to some type for now...
   using Pixmap = unsigned long;
   using Font = unsigned long;
-
+  
+  
   enum class   GCFunctionValue: int{
     Clear = 0x0,
       And = 0x1,
@@ -102,6 +105,15 @@ namespace x11 {
     Unknown
   };
 
+  enum class ColorClass{
+    StaticGray,
+    GrayScale,
+    StaticColor,
+    PseudoColor,
+    TrueColor,
+    DirectColor
+  };
+
   enum EventMask : unsigned long{
     NoEvent =0,
     KeyPress=(1L<<0),  
@@ -132,8 +144,35 @@ namespace x11 {
     
   };
   
-  std::string string_from_event_type( EventType type);					
-  
+  std::string string_from_event_type( EventType type);
+  class VisualInfo{
+    friend NativeConverter;
+  public:
+    VisualInfo();
+    ~VisualInfo();
+    int screen();
+    unsigned int depth();
+    int color_class();
+    // how do I access a classmember named class from C++ ?
+    unsigned long red_mask();
+    unsigned long green_mask();
+    unsigned long blue_mask();
+    int colormap_size();
+    int bits_per_rgb();
+    
+  private:
+    void * impl_;
+  };
+  /*	
+  class Image {
+    friend NativeConverter;
+  public:
+    Image(void * );
+    ~Image();
+  private:
+    void * impl_; 
+  };
+										*/
   class GCValues{
     friend NativeConverter;
     
@@ -214,11 +253,11 @@ namespace x11 {
     ~Display();
     DrawableId root_window( int screen_num);
     DrawableId create_simple_window(DrawableId parent,
-				  int win_x, int win_y,
-				  unsigned int width, unsigned int height,
+				    int win_x, int win_y,
+				    unsigned int width, unsigned int height,
 				  unsigned int border_width,
-				  unsigned long border,
-				  unsigned long background);
+				    unsigned long border,
+				    unsigned long background);
     GC create_gc(DrawableId draw,const GCValues& values);
     void draw_point(DrawableId drawable, GC gc, int x, int y); 
     void draw_rectangle(DrawableId drawable, GC gc, int x, int y, unsigned int width, unsigned int height);
@@ -226,6 +265,7 @@ namespace x11 {
     AtomId intern_atom(const std::string& atom_name, bool only_if_exists  );
     
     Status set_wm_protocols(DrawableId win, const std::vector<AtomId>& protocols  );
+    VisualInfo match_visual_info(int screen_num, int depth, ColorClass color_class);
     void destroy_window(DrawableId win);
     void next_event(Event & event );
     void map_window(DrawableId);

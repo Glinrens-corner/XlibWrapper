@@ -24,7 +24,8 @@ int main(){
 					       dpl.white_pixel(dpl.default_screen()));
   GC gc = dpl.create_gc(win, val);
   Event event{};
-  dpl.select_input(win, EventMask::Exposure|EventMask::StructureNotify); 
+  dpl.select_input(win, EventMask::Exposure|EventMask::StructureNotify);
+  auto visual_info = dpl.match_visual_info(dpl.default_screen() , 24, ColorClass::TrueColor);
   dpl.map_window(win);
   std::vector<AtomId>wm_protocols{dpl.intern_atom( "WM_DELETE_WINDOW", false)};
   if(! dpl.set_wm_protocols(win,wm_protocols)){
@@ -45,6 +46,8 @@ int main(){
     case EventType::ClientMessage:
       dpl.destroy_window(win);
       end = true;
+      break;
+    default:
       break;
     };
 

@@ -6,14 +6,17 @@ workspace "XlibWrapper"
 
 
 project "XlibWrapper"
-    kind "StaticLib"
+    kind "SharedLib"
     targetdir "bin/lib"
     filename "wrapper"
     toolset "clang"
     language "C++"
     cppdialect "C++17"
     links { "X11" }
-    files { "libsrc/*.cpp"  }
+    files { "libsrc/*.cpp" , "libsrc/*.c"  }
+--    filter {"files:**.c"}
+  --      compileas "C"
+    filter {}
     includedirs {"include",  "libsrc/include"}
     buildoptions { "-Wall", }
     filename "XlibWrapper"

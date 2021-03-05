@@ -1,7 +1,26 @@
 #include "X11Wrapper.hpp"
+#include "X11Wrapper.h"
+
 #include <X11/Xlib.h>
+#include <X11/Xutil.h>
 #include <type_traits>
 #include <exception>
+
+
+constexpr int StaticGrayClass = StaticGray;
+constexpr int GrayScaleClass = GrayScale;
+constexpr int StaticColorClass = StaticColor;
+constexpr int PseudoColorClass = PseudoColor;
+constexpr int TrueColorClass = TrueColor;
+constexpr int DirectColorClass = DirectColor;
+
+#undef StaticGray
+#undef GrayScale
+#undef StaticColor
+#undef PseudoColor
+#undef TrueColor
+#undef DirectColor
+
 
 constexpr unsigned long KeyPressType = KeyPress ; 
 constexpr unsigned long KeyReleaseType = KeyRelease ; 
@@ -74,6 +93,7 @@ constexpr unsigned long SelectionRequestType = SelectionRequest ;
 namespace x11{
   unsigned long all_planes(){return XAllPlanes();};
 }
+
 
 namespace x11{
   struct NativeConverter{
@@ -221,8 +241,27 @@ namespace x11{
 #undef TRANSFER
       };
     }
+    static constexpr int convert(ColorClass color_class){
+#define CASE(NAME)\
+      case ColorClass::NAME:\
+	return NAME ## Class;\
+	break;
+
+      switch(color_class){
+	CASE(StaticGray)
+	  CASE(GrayScale)
+	  CASE(StaticColor)
+	  CASE(PseudoColor)
+	  CASE(TrueColor)
+	  CASE(DirectColor)
+	}
+#undef CASE
+    };
     static constexpr ::XEvent * access(x11::Event& event){
       return static_cast<::XEvent*>(event.impl_);
+    };
+    static constexpr ::XVisualInfo* access( x11::VisualInfo& info){
+      return static_cast<::XVisualInfo *>(info.impl_);
     };
   };
   
@@ -280,6 +319,20 @@ namespace x11 {
 
 
 }
+
+// VisualInfo
+namespace x11 {
+  VisualInfo::VisualInfo(){this->impl_=static_cast<void*>( new ::XVisualInfo{}); };
+  VisualInfo::~VisualInfo(){delete static_cast<::XVisualInfo*>( this->impl_ ) ;};
+  int VisualInfo::screen(){return NativeConverter::access(*this)->screen;};
+  int VisualInfo::color_class()  { return ::get_color_map_class(NativeConverter::access(*this)); }
+  unsigned long VisualInfo::red_mask(){return NativeConverter::access(*this)->red_mask;};
+  unsigned long VisualInfo::green_mask(){return NativeConverter::access(*this)->green_mask;};
+  unsigned long VisualInfo::blue_mask(){return NativeConverter::access(*this)->blue_mask;};
+  
+  int VisualInfo::colormap_size(){return NativeConverter::access(*this)->colormap_size;}
+  int VisualInfo::bits_per_rgb(){return NativeConverter::access(*this)->bits_per_rgb;};
+};
 
 namespace x11 {
   
@@ -385,7 +438,13 @@ namespace x11 {
 
 // Display
 namespace x11 {
-
+  VisualInfo Display::match_visual_info(int screen_num, int depth, ColorClass color_class) {
+      VisualInfo info{};
+      if (! XMatchVisualInfo(this->impl,screen_num, depth, NativeConverter::convert(color_class), NativeConverter::access(info))){
+	throw std::exception{};
+      }
+      return info;
+  };
   DrawableId Display::root_window( int screen_num) {return  RootWindow( this->impl, screen_num); };
   DrawableId Display::create_simple_window(DrawableId parent,
 					 int win_x, int win_y,
