@@ -148,6 +148,11 @@ namespace x11 {
 
   std::string string_from_event_type( EventType type);
 
+  enum class ImageFormat{
+    XYBitmap,
+    XYPixmap,
+    ZPixmap
+  };
   class Visual {
     friend NativeConverter;
   public:
@@ -155,7 +160,7 @@ namespace x11 {
   private:
     void* impl_;
   };
-
+  
   
   class VisualInfo{
     friend NativeConverter;
@@ -172,21 +177,27 @@ namespace x11 {
     unsigned long blue_mask();
     int colormap_size();
     int bits_per_rgb();
+
     
   private:
     void * impl_;
 
   };
-  /*	
   class Image {
     friend NativeConverter;
   public:
     Image(void * );
     ~Image();
+    char* data();
+    int width();
+    int height();
+    int bits_per_pixel();
+    int bytes_per_pixel();
   private:
     void * impl_; 
   };
-										*/
+
+  
   class SetWindowAttributes{
     friend NativeConverter;
   public:
@@ -300,6 +311,20 @@ namespace x11 {
   public:
     Display(char* display_name);
     ~Display();
+    Image create_image(Visual visual,
+			      unsigned int depth,
+			      ImageFormat format,
+			      int offset,
+			      char* data,
+			      unsigned int width, unsigned int height,
+			      int bitmap_pad, int bytes_per_line
+		       );
+    void put_image(DrawableId window,
+			  GC gc,
+			  Image image,
+			  int src_x, int src_y,
+			  int dest_x, int dest_y,
+		   unsigned int width, unsigned int height);
     DrawableId root_window( int screen_num);
     DrawableId create_simple_window(DrawableId parent,
 				    int win_x, int win_y,

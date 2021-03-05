@@ -6,6 +6,13 @@
 #include <type_traits>
 #include <exception>
 
+constexpr int XYBitmapFormat = XYBitmap;
+constexpr int XYPixmapFormat = XYPixmap;
+constexpr int  ZPixmapFormat =  ZPixmap;
+
+#undef XYBitmap
+#undef XYPixmap
+#undef  ZPixmap
 
 constexpr int StaticGrayClass = StaticGray;
 constexpr int GrayScaleClass = GrayScale;
@@ -257,11 +264,28 @@ namespace x11{
 	}
 #undef CASE
     };
+    static constexpr int convert(ImageFormat image_format){
+      switch(image_format){
+      case ImageFormat::XYBitmap:
+	return XYBitmapFormat;
+	break;
+      case ImageFormat::XYPixmap:
+	return XYPixmapFormat;
+	break;
+      case ImageFormat::ZPixmap:
+	return ZPixmapFormat;
+	break;
+      };
+
+    };
     static constexpr ::XEvent * access(x11::Event& event){
       return static_cast<::XEvent*>(event.impl_);
     };
     static constexpr ::XVisualInfo* access( x11::VisualInfo& info){
       return static_cast<::XVisualInfo *>(info.impl_);
+    };
+    static constexpr ::XImage * access ( x11::Image& image){
+      return static_cast<::XImage*>( image.impl_);
     };
     static constexpr ::Visual* access( x11::Visual& visual){
       return static_cast<::Visual*>(visual.impl_ );
@@ -352,6 +376,7 @@ namespace x11 {
   unsigned int VisualInfo::depth(){return NativeConverter::access(*this)->depth;};
   Visual VisualInfo::visual(){return Visual( reinterpret_cast<void*>(NativeConverter::access(*this)->visual));};
   int VisualInfo::screen(){return NativeConverter::access(*this)->screen;};
+  
   int VisualInfo::color_class()  { return ::get_color_map_class(NativeConverter::access(*this)); }
   unsigned long VisualInfo::red_mask(){return NativeConverter::access(*this)->red_mask;};
   unsigned long VisualInfo::green_mask(){return NativeConverter::access(*this)->green_mask;};
@@ -364,6 +389,17 @@ namespace x11 {
 // Visual
 namespace x11 {
    Visual::Visual(void * impl):impl_(impl){};
+}
+
+// Image
+namespace x11 {
+  Image::Image(void * impl): impl_(impl){};
+  Image::~Image(){};
+  char * Image::data(){ return NativeConverter::access(*this)->data;}
+  int Image::width(){ return NativeConverter::access(*this)->width;}
+  int  Image::height(){ return NativeConverter::access(*this)->height;}
+  int Image::bits_per_pixel(){return NativeConverter::access(*this)->bits_per_pixel;}
+  int Image::bytes_per_pixel(){return this->bits_per_pixel()/8;};
 }
 
 // SetWindowAttributes
@@ -501,6 +537,28 @@ namespace x11 {
       return info;
   };
   DrawableId Display::root_window( int screen_num) {return  RootWindow( this->impl, screen_num); };
+  Image Display::create_image(Visual visual,
+			      unsigned int depth,
+			      ImageFormat format,
+			      int offset,
+			      char* data,
+			      unsigned int width, unsigned int height,
+			      int bitmap_pad, int bytes_per_line
+			      ){
+    return Image(reinterpret_cast<void*>(XCreateImage(this->impl,
+						      NativeConverter::access(visual),
+						      depth,
+						      NativeConverter::convert(format),
+						      offset,
+						      data,
+						      width, height,
+						      bitmap_pad,
+						      bytes_per_line
+						      )
+					 )
+		 );
+  };
+
   DrawableId Display::create_window(DrawableId parent,
 				    int x, int y,
 				    unsigned int width,
@@ -521,6 +579,20 @@ namespace x11 {
 			 attributes.valuemask(),
 			 &attrib);
   };
+  void Display::put_image(DrawableId window,
+			  GC gc,
+			  Image image,
+			  int src_x, int src_y,
+			  int dest_x, int dest_y,
+			  unsigned int width, unsigned int height){
+    
+    XPutImage(this->impl, window, NativeConverter::convert(gc),
+	      NativeConverter::access(image),
+	      src_x, src_y, dest_x, dest_y,
+	      width, height);
+	      
+  };
+		     
   DrawableId Display::create_simple_window(DrawableId parent,
 					 int win_x, int win_y,
 					 unsigned int width, unsigned int height,
