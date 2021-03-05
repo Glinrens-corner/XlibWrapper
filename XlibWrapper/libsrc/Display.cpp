@@ -71,6 +71,9 @@ constexpr unsigned long SelectionRequestType = SelectionRequest ;
 #undef SelectionNotify 
 #undef SelectionRequest 
 
+namespace x11{
+  unsigned long all_planes(){return XAllPlanes();};
+}
 
 namespace x11{
   struct NativeConverter{
@@ -418,7 +421,7 @@ namespace x11 {
   int Display::default_screen(){return XDefaultScreen(this->impl);};
   void Display::flush(){XFlush(this->impl);};
   void Display::sync(bool discard){XSync(this->impl, discard);};
-  void Display::next_event(Event& event){XNextEvent(this->impl, NativeConverter::access(event)); }; 
+  void Display::next_event(Event& event){XNextEvent(this->impl, NativeConverter::access(event)); };
   Display::~Display(){ XCloseDisplay(this->impl); };
   Display::Display(char * display_name):impl(XOpenDisplay( display_name)){
   };

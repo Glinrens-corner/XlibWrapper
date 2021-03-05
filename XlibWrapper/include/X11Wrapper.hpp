@@ -4,7 +4,10 @@
 #include <vector>
 struct _XGC;
 struct _XDisplay;
+namespace x11 {
+  unsigned long all_planes();
 
+}
 namespace x11 {
   struct NativeConverter;
 
